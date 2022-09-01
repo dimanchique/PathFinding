@@ -16,44 +16,7 @@ struct Node {
 
 class Grid {
 public:
-    Grid() {};
-
-    Node *GetNodeAt(int x, int y) { return &_grid[y][x]; }
-
-    void GetNeighboursOf(Node &n, std::vector<Node *> &neighbours) {
-        neighbours.clear();
-        if (n.x - 1 >= 0) {
-            Node *node = GetNodeAt(n.x - 1, n.y);
-            if (node->distance != UNREACHABLE)
-                neighbours.emplace_back(node);
-        }
-        if (n.x + 1 <= x_lim) {
-            Node *node = GetNodeAt(n.x + 1, n.y);
-            if (node->distance != UNREACHABLE)
-                neighbours.emplace_back(node);
-        }
-        if (n.y - 1 >= 0) {
-            Node *node = GetNodeAt(n.x, n.y - 1);
-            if (node->distance != UNREACHABLE)
-                neighbours.emplace_back(node);
-        }
-        if (n.y + 1 <= y_lim) {
-            Node *node = GetNodeAt(n.x, n.y + 1);
-            if (node->distance != UNREACHABLE)
-                neighbours.emplace_back(node);
-        }
-    }
-
-    int ConvertFrom2Dto1D(Node &node) const { return node.x + node.y * (x_lim + 1); }
-
-private:
-    std::vector<std::vector<Node>> _grid;
-    int x_lim, y_lim;
-
-public:
-    static Grid CreateGrid(std::pair<int, int> MapDimensions, const std::vector<int> &Map) {
-        Grid grid;
-
+    Grid(std::pair<int, int> MapDimensions, const std::vector<int> &Map) {
         int index = 0;
         for (auto y = 0; y < MapDimensions.second; y++) {
             std::vector<Node> row;
@@ -64,13 +27,45 @@ public:
                     row.emplace_back(Node(x, y, NOT_VISITED));
                 index++;
             }
-            grid._grid.emplace_back(row);
+            _grid.emplace_back(row);
         }
 
-        grid.y_lim = grid._grid.size() - 1;
-        grid.x_lim = grid._grid[0].size() - 1;
-        return grid;
+        y_lim = _grid.size() - 1;
+        x_lim = _grid[0].size() - 1;
+    };
+
+    Node *GetNodeAt(int x, int y) { return &_grid[y][x]; }
+
+    void GetNeighboursOf(Node &n, std::vector<Node *> &neighbours) {
+        Node* node;
+        neighbours.clear();
+        if (n.x - 1 >= 0) {
+            node = GetNodeAt(n.x - 1, n.y);
+            if (node->distance != UNREACHABLE)
+                neighbours.emplace_back(node);
+        }
+        if (n.x + 1 <= x_lim) {
+            node = GetNodeAt(n.x + 1, n.y);
+            if (node->distance != UNREACHABLE)
+                neighbours.emplace_back(node);
+        }
+        if (n.y - 1 >= 0) {
+            node = GetNodeAt(n.x, n.y - 1);
+            if (node->distance != UNREACHABLE)
+                neighbours.emplace_back(node);
+        }
+        if (n.y + 1 <= y_lim) {
+            node = GetNodeAt(n.x, n.y + 1);
+            if (node->distance != UNREACHABLE)
+                neighbours.emplace_back(node);
+        }
     }
+
+    int ConvertFrom2Dto1D(Node &node) const { return node.x + node.y * (x_lim + 1); }
+
+private:
+    std::vector<std::vector<Node>> _grid;
+    int x_lim, y_lim;
 };
 
 bool FindPath(std::pair<int, int> Start,
@@ -84,7 +79,7 @@ int main(int argc, char *argv[]) {
 
     std::chrono::high_resolution_clock::time_point start_time, stop_time;
     start_time = std::chrono::high_resolution_clock::now();
-    bool c = FindPath(StartPoint, TargetPoint, MapData,MapDimensionsData, OutPath);
+    bool c = FindPath(StartPoint, EndPoint, MapData, MapDimensionsData, OutPath);
     stop_time = std::chrono::high_resolution_clock::now();
 
     printf("Target is %s\n", c ? "reachable" : "unreachable");
@@ -98,17 +93,19 @@ bool FindPath(std::pair<int, int> Start,
               std::pair<int, int> MapDimensions,
               std::vector<int> &OutPath) {
 
-    Grid grid = Grid::CreateGrid(MapDimensions, Map);
-    Node *StartPoint = grid.GetNodeAt(Start.first, Start.second);
-    Node *EndPoint = grid.GetNodeAt(Target.first, Target.second);
+    Grid grid(MapDimensions, Map);
+    Node *start_point = grid.GetNodeAt(Start.first, Start.second);
+    Node *end_point = grid.GetNodeAt(Target.first, Target.second);
 
-    EndPoint->distance = 0;
+    end_point->distance = 0;
 
     std::vector<Node*> ToVisit;
     std::vector<Node*> neighbours;
 
-    ToVisit.emplace_back(EndPoint);
+    ToVisit.emplace_back(end_point);
     for (int i = 0; i < ToVisit.size(); i++) {
+        if (grid.GetNodeAt(Start.first, Start.second)->distance != NOT_VISITED)
+            break;
         grid.GetNeighboursOf(*ToVisit[i], neighbours);
         for (auto &n: neighbours) {
             if (n->distance == NOT_VISITED) {
@@ -129,16 +126,16 @@ bool FindPath(std::pair<int, int> Start,
         printf("\n");
     }
 
-    if (StartPoint->distance == NOT_VISITED)
+    if (start_point->distance == NOT_VISITED)
         return false;
 
-    while (StartPoint->distance != 0) {
+    while (start_point->distance != 0) {
         neighbours.clear();
-        grid.GetNeighboursOf(*StartPoint, neighbours);
+        grid.GetNeighboursOf(*start_point, neighbours);
         for (auto &node: neighbours) {
-            if (node->distance < StartPoint->distance) {
+            if (node->distance < start_point->distance) {
                 OutPath.emplace_back(grid.ConvertFrom2Dto1D(*node));
-                StartPoint = node;
+                start_point = node;
                 break;
             }
         }
