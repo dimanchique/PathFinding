@@ -11,30 +11,31 @@
 
 struct Node {
     Node(int x, int y, int distance) : x(x), y(y), distance(distance) {};
+    Node(std::pair<int,int> xy, int distance) : x(xy.first), y(xy.second), distance(distance) {};
     int x, y, distance;
 };
 
 class Grid {
 public:
     Grid(std::pair<int, int> MapDimensions, const std::vector<int> &Map) {
-        int index = 0;
-        for (auto y = 0; y < MapDimensions.second; y++) {
-            std::vector<Node> row;
-            for (auto x = 0; x < MapDimensions.first; x++) {
-                if (Map[index] == 0)
-                    row.emplace_back(Node(x, y, UNREACHABLE));
-                else
-                    row.emplace_back(Node(x, y, NOT_VISITED));
-                index++;
-            }
-            _grid.emplace_back(row);
-        }
+        x_lim = MapDimensions.first - 1;
+        y_lim = MapDimensions.second - 1;
 
-        y_lim = _grid.size() - 1;
-        x_lim = _grid[0].size() - 1;
+        for (int i = 0; i < Map.size(); i++)
+        {
+            auto Position = ConvertFrom1Dto2D(i);
+            if (Map[i] == 0)
+                _grid.emplace_back(Node(Position, UNREACHABLE));
+            else
+                _grid.emplace_back(Node(Position, NOT_VISITED));
+        }
     };
 
-    Node *GetNodeAt(int x, int y) { return &_grid[y][x]; }
+    Node *GetNodeAt(int x, int y) {
+        auto index = ConvertFrom2Dto1D(x, y);
+        return &_grid[index];
+    }
+    Node *GetNodeAt(int index) { return &_grid[index]; }
 
     void GetNeighboursOf(Node &n, std::vector<Node *> &neighbours) {
         Node* node;
@@ -61,10 +62,25 @@ public:
         }
     }
 
-    int ConvertFrom2Dto1D(Node &node) const { return node.x + node.y * (x_lim + 1); }
+    void Show()
+    {
+        for (auto y = 0; y < y_lim+1; y++) {
+            std::cout << "|";
+            for (auto x = 0; x < x_lim+1; x++) {
+                if (GetNodeAt(x, y)->distance == UNREACHABLE)
+                    std::cout << std::setw(3) << "xx" << "|";
+                else
+                    std::cout << std::setw(3) << GetNodeAt(x, y)->distance << "|";
+            }
+            printf("\n");
+        }
+    }
+
+    int ConvertFrom2Dto1D(int x, int y) const { return x + y * (x_lim + 1); }
+    std::pair<int, int> ConvertFrom1Dto2D(int index) const { return { index % (x_lim+1), index / (x_lim+1) }; }
 
 private:
-    std::vector<std::vector<Node>> _grid;
+    std::vector<Node> _grid;
     int x_lim, y_lim;
 };
 
@@ -115,16 +131,7 @@ bool FindPath(std::pair<int, int> Start,
         }
     }
 
-    for (auto y = 0; y < MapDimensions.second; y++) {
-        std::cout << "|";
-        for (auto x = 0; x < MapDimensions.first; x++) {
-            if (grid.GetNodeAt(x, y)->distance == UNREACHABLE)
-                std::cout << std::setw(3) << "xx" << "|";
-            else
-                std::cout << std::setw(3) << grid.GetNodeAt(x, y)->distance << "|";
-        }
-        printf("\n");
-    }
+    grid.Show();
 
     if (start_point->distance == NOT_VISITED)
         return false;
@@ -134,7 +141,7 @@ bool FindPath(std::pair<int, int> Start,
         grid.GetNeighboursOf(*start_point, neighbours);
         for (auto &node: neighbours) {
             if (node->distance < start_point->distance) {
-                OutPath.emplace_back(grid.ConvertFrom2Dto1D(*node));
+                OutPath.emplace_back(grid.ConvertFrom2Dto1D(node->x, node->y));
                 start_point = node;
                 break;
             }
