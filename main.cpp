@@ -74,9 +74,17 @@ public:
         }
     }
 
-    int ConvertFrom2Dto1D(int x, int y) const { return x + y * (x_lim + 1); }
-    int ConvertFrom2Dto1D(Node& n) const { return n.x + n.y * (x_lim + 1); }
-    std::pair<int, int> ConvertFrom1Dto2D(int index) const { return { index % (x_lim+1), index / (x_lim+1) }; }
+    int ConvertFrom2Dto1D(int x, int y) const {
+        return x + y * (x_lim + 1);
+    }
+
+    int ConvertFrom2Dto1D(Node& n) const {
+        return n.x + n.y * (x_lim + 1);
+    }
+
+    std::pair<int, int> ConvertFrom1Dto2D(int index) const {
+        return { index % (x_lim+1), index / (x_lim+1) };
+    }
 
 private:
     std::vector<Node> _grid;
@@ -89,7 +97,7 @@ bool FindPath(std::pair<int, int> Start,
               std::pair<int, int> MapDimensions,
               std::vector<int> &OutPath);
 
-int main(int argc, char *argv[]) {
+int main() {
     std::vector<int> OutPath;
 
     std::chrono::high_resolution_clock::time_point start_time, stop_time;
@@ -130,7 +138,7 @@ bool FindPath(std::pair<int, int> Start,
         }
     }
 
-    //grid.Show();
+    grid.Show();
 
     if (start_point->distance == NOT_VISITED)
         return false;
